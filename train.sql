@@ -1,40 +1,46 @@
 CREATE DATABASE IF NOT EXISTS `TrainDatabase`;
 USE `TrainDatabase`;
 
+CREATE TABLE IF NOT EXISTS Train (
+	TrainID INT,
+    Color VARCHAR(50),
+    PRIMARY KEY (TrainID)
+);
+
 -- TrainSchedule table
 CREATE TABLE IF NOT EXISTS TrainSchedule (
     transitLineName VARCHAR(50),
-    Train VARCHAR(50),
+    Train INT,
     Origin VARCHAR(50),
-    Destination VARCHAR(50),
-    departDate DATE,
-    arrivalDate DATE,
-    travelTime VARCHAR(50),
-    stopsAmount INT,
+    Destination VARCHAR(50), 
+    departDate DATETIME,
+    arrivalDate DATETIME,
+    totalTravelTime INT,
     fare FLOAT,
-    PRIMARY KEY (transitLineName, Train)
+    stopCount INT,
+    PRIMARY KEY (transitLineName, Train),
+    FOREIGN KEY (Train) REFERENCES Train(TrainID)
 );
 
--- hasTrainStation table
-CREATE TABLE IF NOT EXISTS hasTrainStation (
-    transitLineName VARCHAR(50),
+-- TrainStation table
+CREATE TABLE IF NOT EXISTS TrainStation (
     stationID INT,
     name VARCHAR(50),
     cityName VARCHAR(50),
     state VARCHAR(50),
-    PRIMARY KEY (stationID, transitLineName),
-    FOREIGN KEY (transitLineName) REFERENCES TrainSchedule(transitLineName)
-);
+    PRIMARY KEY (stationID));
 
 -- TrainStops table
 CREATE TABLE IF NOT EXISTS TrainStops (
     transitLineName VARCHAR(50),
-    Train VARCHAR(50),
-    stopOrder INT,
+    Train INT,
     stationID INT,
-    PRIMARY KEY (transitLineName, Train, stopOrder),
-    FOREIGN KEY (transitLineName, Train) REFERENCES TrainSchedule(transitLineName, Train),
-    FOREIGN KEY (stationID) REFERENCES hasTrainStation(stationID)
+    stopOrder INT,
+    arrivalTime DATETIME,
+    departureTime DATETIME,
+    FOREIGN KEY (transitLineName) REFERENCES TrainSchedule(transitLineName),
+    FOREIGN KEY (Train) REFERENCES Train(TrainID),
+    FOREIGN KEY (stationID) REFERENCES TrainStation(stationID)
 );
 
 -- Customer table
@@ -52,7 +58,7 @@ CREATE TABLE IF NOT EXISTS Reservation (
     Number INT,
     emailAddress VARCHAR(50),
     transitLineName VARCHAR(50),
-    Train VARCHAR(50),
+    Train INT,
     Origin VARCHAR(50),
     Destination VARCHAR(50),
     departDate DATE,
@@ -62,8 +68,8 @@ CREATE TABLE IF NOT EXISTS Reservation (
     totalFare FLOAT,
     PRIMARY KEY (Number),
     FOREIGN KEY (emailAddress) REFERENCES Customer(emailAddress),
-    FOREIGN KEY (transitLineName, Train)
-        REFERENCES TrainSchedule(transitLineName, Train)
+    FOREIGN KEY (transitLineName) REFERENCES TrainSchedule(transitLineName),
+    FOREIGN KEY (Train) REFERENCES Train(TrainID)
 );
 
 -- Employees table
@@ -83,9 +89,11 @@ CREATE TABLE IF NOT EXISTS CustomerIssues (
     issueDescription VARCHAR(1000),
     response VARCHAR(1000),
     salesRepSSN CHAR(11),
-    PRIMARY KEY (emailAddress, salesRepSSN),
-    FOREIGN KEY (emailAddress) REFERENCES Customer(emailAddress),
-    FOREIGN KEY (salesRepSSN) REFERENCES Employee(SSN)
+    PRIMARY KEY (emailAddress , salesRepSSN),
+    FOREIGN KEY (emailAddress)
+        REFERENCES Customer (emailAddress),
+    FOREIGN KEY (salesRepSSN)
+        REFERENCES Employee (SSN)
 );
 
 INSERT INTO `Customer` VALUES 
@@ -95,3 +103,28 @@ INSERT INTO `Employee` VALUES
 ('111-11-1111', 'john', 'doe', 'admin', 'pass123', "Admin"),
 ('111-21-1112', 'jane', 'doe', 'employeeem', 'pass123', "Employee");
 
+INSERT INTO `TrainStation` VALUES
+(1, 'Trenton', 'Trenton', 'New Jersey'),
+(12, 'NB', 'New Brunswick', 'New Jersey'),
+(13, 'Edison', 'Edison', 'New Jersey'),
+(14, 'Metuchen', 'Metuchen', 'New Jersey'),
+(15, 'NYC', 'New York City', 'New York');
+
+INSERT INTO `Train` VALUES
+(101, 'Blue');
+
+INSERT INTO `TrainSchedule` VALUES
+('Northeast', 101, 'Trenton', 'New York City', '2024-12-10 03:48:00', '2024-12-10 05:21:00', 90, 50.0, 5),
+('NortheastReversed', 101, 'New York City', 'Trenton', '2024-12-10 03:48:00', '2024-12-10 05:21:00', 100, 55.0, 5);
+
+INSERT INTO `TrainStops` VALUES
+('Northeast', 101, 1, 1, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('Northeast', 101, 12, 2, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('Northeast', 101, 13, 3, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('Northeast', 101, 14, 4, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('Northeast', 101, 15, 5, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('NortheastReversed', 101, 15, 1, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('NortheastReversed', 101, 14, 2, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('NortheastReversed', 101, 13, 3, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('NortheastReversed', 101, 12, 4, '2024-12-10 03:48:00', '2024-12-10 03:48:00'),
+('NortheastReversed', 101, 1, 5, '2024-12-10 03:48:00', '2024-12-10 03:48:00');
