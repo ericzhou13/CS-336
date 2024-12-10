@@ -85,9 +85,13 @@ CREATE TABLE IF NOT EXISTS CustomerIssues (
     salesRepSSN CHAR(11),
     PRIMARY KEY (emailAddress, salesRepSSN),
     FOREIGN KEY (emailAddress) REFERENCES Customer(emailAddress),
-    FOREIGN KEY (salesRepSSN) REFERENCES Employees(SSN)
+    FOREIGN KEY (salesRepSSN) REFERENCES Employee(SSN)
 );
 
 INSERT INTO `Customer` VALUES 
 ('hi@gmail.com', 'hey', 'hello', 'cust1', 'pass123');
+
+INSERT INTO `Employee` VALUES 
+('111-11-1111', 'john', 'doe', 'admin', 'pass123', "Admin"),
+('111-21-1112', 'jane', 'doe', 'employeeem', 'pass123', "Employee");
 
