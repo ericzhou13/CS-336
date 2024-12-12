@@ -1,263 +1,159 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1" 
-    import="java.sql.*, java.util.*, com.cs336.pkg.*"%>
-<%@ page import="javax.servlet.http.*,javax.servlet.*"%>
-<%@ page session="true"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1" import="java.sql.*,java.util.*"%>
+<%@ page session="true" %>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Customer Representative Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; }
-        table, th, td { border: 1px solid #ddd; padding: 8px; }
-        .section { margin-bottom: 20px; }
-    </style>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>Dashboard</title>
 </head>
 <body>
+    <h1>Welcome to the Dashboard</h1>
+
+    <%-- Database Connection --%>
     <%
-    // Database connection setup
     Connection conn = null;
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    try {
-        // Establish database connection
-        Class.forName("com.mysql.jdbc.Driver");
-        conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/TrainDatabase", "root", "12345678");
+        try {
+        	Class.forName("com.mysql.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/TrainDatabase", "root", "12345678");
 
-        // Check if user is logged in and has correct role
-        String userRole = (String) session.getAttribute("role");
-        if (userRole == null || !userRole.equals("Emplyee")) {
-            response.sendRedirect("login.jsp");
-            return;
-        }
+            // Simulated Role Setup (Replace with session logic in production)
+            String userRole = (String) session.getAttribute("Employee"); // "Customer", "Employee", or "Admin"
+            if (userRole == null) {
+                userRole = "Employee"; // Default role for testing
+            }
 
-        // 1. Edit and Delete Train Schedules
-        if (request.getParameter("action") != null) {
+            // Display content based on role
+    %>
+
+    <%-- Customer Features --%>
+    <% if ("Customer".equals(userRole)) { %>
+        <h2>Customer Features</h2>
+
+        <%-- Browse Questions and Answers --%>
+        <h3>Browse Questions and Answers</h3>
+        <%
+            String customerEmail = "hi@gmail.com"; // Replace with logged-in customer email
+            String query = "SELECT issueDescription, response FROM CustomerIssues WHERE emailAddress = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, customerEmail);
+                ResultSet k = stmt.executeQuery();
+
+                out.println("<table border='1'><tr><th>Question</th><th>Answer</th></tr>");
+                while (k.next()) {
+                    out.println("<tr><td>" + k.getString("issueDescription") + "</td>");
+                    out.println("<td>" + k.getString("response") + "</td></tr>");
+                }
+                out.println("</table>");
+            }
+        %>
+
+        <%-- Send a Question to Customer Service --%>
+        <h3>Send a Question</h3>
+        <form method="post">
+            <label>Question:</label>
+            <textarea name="question" required></textarea>
+            <br>
+            <button type="submit" name="action" value="sendQuestion">Send</button>
+        </form>
+        <%
+            if ("sendQuestion".equals(request.getParameter("action"))) {
+                String question = request.getParameter("question");
+                String insertSQL = "INSERT INTO CustomerIssues (emailAddress, issueDescription) VALUES (?, ?)";
+                try (PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
+                    stmt.setString(1, customerEmail);
+                    stmt.setString(2, question);
+                    stmt.executeUpdate();
+                    out.println("<p>Question submitted successfully!</p>");
+                }
+            }
+        %>
+    <% } %>
+
+    <%-- Employee/Admin Features --%>
+    <% if ("Employee".equals(userRole) || "Admin".equals(userRole)) { %>
+        <h2>Employee/Admin Features</h2>
+
+        <%-- Edit or Delete Train Schedules --%>
+        <h3>Edit or Delete Train Schedules</h3>
+        <form method="post">
+            <label>Transit Line Name:</label>
+            <input type="text" name="transitLineName" required>
+            <br>
+            <label>Train ID:</label>
+            <input type="number" name="trainID" required>
+            <br>
+            <label>Origin:</label>
+            <input type="text" name="origin">
+            <br>
+            <label>Destination:</label>
+            <input type="text" name="destination">
+            <br>
+            <label>Depart Date:</label>
+            <input type="datetime-local" name="departDate">
+            <br>
+            <label>Arrival Date:</label>
+            <input type="datetime-local" name="arrivalDate">
+            <br>
+            <label>Fare:</label>
+            <input type="number" step="0.01" name="fare">
+            <br>
+            <button type="submit" name="action" value="editSchedule">Edit</button>
+            <button type="submit" name="action" value="deleteSchedule">Delete</button>
+        </form>
+        <%
             String action = request.getParameter("action");
-            
-            // Edit Train Schedule
-            if (action.equals("editSchedule")) {
+            if ("editSchedule".equals(action)) {
                 String transitLineName = request.getParameter("transitLineName");
+                int trainID = Integer.parseInt(request.getParameter("trainID"));
                 String origin = request.getParameter("origin");
                 String destination = request.getParameter("destination");
                 String departDate = request.getParameter("departDate");
-                
-                pstmt = conn.prepareStatement(
-                    "UPDATE TrainSchedule SET Origin=?, Destination=?, departDate=? WHERE transitLineName=?"
-                );
-                pstmt.setString(1, origin);
-                pstmt.setString(2, destination);
-                pstmt.setString(3, departDate);
-                pstmt.setString(4, transitLineName);
-                pstmt.executeUpdate();
-            }
-            
-            // Delete Train Schedule
-            if (action.equals("deleteSchedule")) {
+                String arrivalDate = request.getParameter("arrivalDate");
+                float fare = Float.parseFloat(request.getParameter("fare"));
+
+                String updateSQL = "UPDATE TrainSchedule SET Origin = ?, Destination = ?, departDate = ?, arrivalDate = ?, fare = ? WHERE transitLineName = ? AND Train = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
+                    stmt.setString(1, origin);
+                    stmt.setString(2, destination);
+                    stmt.setString(3, departDate);
+                    stmt.setString(4, arrivalDate);
+                    stmt.setFloat(5, fare);
+                    stmt.setString(6, transitLineName);
+                    stmt.setInt(7, trainID);
+                    stmt.executeUpdate();
+                    out.println("<p>Schedule updated successfully!</p>");
+                }
+            } else if ("deleteSchedule".equals(action)) {
                 String transitLineName = request.getParameter("transitLineName");
-                pstmt = conn.prepareStatement(
-                    "DELETE FROM TrainSchedule WHERE transitLineName=?"
-                );
-                pstmt.setString(1, transitLineName);
-                pstmt.executeUpdate();
+                int trainID = Integer.parseInt(request.getParameter("trainID"));
+
+                String deleteSQL = "DELETE FROM TrainSchedule WHERE transitLineName = ? AND Train = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(deleteSQL)) {
+                    stmt.setString(1, transitLineName);
+                    stmt.setInt(2, trainID);
+                    stmt.executeUpdate();
+                    out.println("<p>Schedule deleted successfully!</p>");
+                }
+            }
+        %>
+    <% } %>
+
+    <%-- Close Database Connection --%>
+    <%
+        } catch (Exception e) {
+            out.println("<p>Error: " + e.getMessage() + "</p>");
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    out.println("<p>Error closing connection: " + e.getMessage() + "</p>");
+                }
             }
         }
-    %>
-
-    <div class="section">
-        <h2>Train Schedule Management</h2>
-        <!-- Train Schedule Edit Form -->
-        <form method="post">
-            <input type="hidden" name="action" value="editSchedule">
-            Transit Line: <input type="text" name="transitLineName">
-            Origin: <input type="text" name="origin">
-            Destination: <input type="text" name="destination">
-            Depart Date: <input type="datetime-local" name="departDate">
-            <input type="submit" value="Edit Schedule">
-        </form>
-    </div>
-
-    <%
-        // 6. List Train Schedules for a Station
-        String stationSearch = request.getParameter("stationSearch");
-        if (stationSearch != null && !stationSearch.isEmpty()) {
-            pstmt = conn.prepareStatement(
-                "SELECT * FROM TrainSchedule " +
-                "WHERE Origin = ? OR Destination = ?"
-            );
-            pstmt.setString(1, stationSearch);
-            pstmt.setString(2, stationSearch);
-            rs = pstmt.executeQuery();
-    %>
-        <div class="section">
-            <h2>Train Schedules for <%= stationSearch %></h2>
-            <table>
-                <tr>
-                    <th>Transit Line</th>
-                    <th>Origin</th>
-                    <th>Destination</th>
-                    <th>Depart Date</th>
-                </tr>
-                <% while (rs.next()) { %>
-                    <tr>
-                        <td><%= rs.getString("transitLineName") %></td>
-                        <td><%= rs.getString("Origin") %></td>
-                        <td><%= rs.getString("Destination") %></td>
-                        <td><%= rs.getString("departDate") %></td>
-                    </tr>
-                <% } %>
-            </table>
-        </div>
-    <%
-        }
-
-        // 7. List Customers for Transit Line and Date
-        String transitLineSearch = request.getParameter("transitLineSearch");
-        String dateSearch = request.getParameter("dateSearch");
-        if (transitLineSearch != null && dateSearch != null 
-            && !transitLineSearch.isEmpty() && !dateSearch.isEmpty()) {
-            pstmt = conn.prepareStatement(
-                "SELECT DISTINCT c.* FROM Customer c " +
-                "JOIN Reservation r ON c.emailAddress = r.emailAddress " +
-                "WHERE r.transitLineName = ? AND r.departDate = ?"
-            );
-            pstmt.setString(1, transitLineSearch);
-            pstmt.setString(2, dateSearch);
-            rs = pstmt.executeQuery();
-    %>
-        <div class="section">
-            <h2>Customers on <%= transitLineSearch %> on <%= dateSearch %></h2>
-            <table>
-                <tr>
-                    <th>Email</th>
-                    <th>Last Name</th>
-                    <th>First Name</th>
-                </tr>
-                <% while (rs.next()) { %>
-                    <tr>
-                        <td><%= rs.getString("emailAddress") %></td>
-                        <td><%= rs.getString("lastName") %></td>
-                        <td><%= rs.getString("firstName") %></td>
-                    </tr>
-                <% } %>
-            </table>
-        </div>
-    <%
-        }
-
-        // 2 & 3. Browse and Search Customer Questions
-        String keyword = request.getParameter("keyword");
-        if (keyword != null && !keyword.isEmpty()) {
-            pstmt = conn.prepareStatement(
-                "SELECT * FROM CustomerIssues " +
-                "WHERE issueDescription LIKE ?"
-            );
-            pstmt.setString(1, "%" + keyword + "%");
-            rs = pstmt.executeQuery();
-    %>
-        <div class="section">
-            <h2>Customer Questions Matching: <%= keyword %></h2>
-            <table>
-                <tr>
-                    <th>Customer Email</th>
-                    <th>Issue</th>
-                    <th>Response</th>
-                </tr>
-                <% while (rs.next()) { %>
-                    <tr>
-                        <td><%= rs.getString("emailAddress") %></td>
-                        <td><%= rs.getString("issueDescription") %></td>
-                        <td><%= rs.getString("response") %></td>
-                    </tr>
-                <% } %>
-            </table>
-        </div>
-    <%
-        }
-
-        // 4 & 5. Send and Reply to Customer Questions
-        if (request.getParameter("submitIssue") != null) {
-            String email = request.getParameter("email");
-            String issue = request.getParameter("issue");
-            
-            pstmt = conn.prepareStatement(
-                "INSERT INTO CustomerIssues (emailAddress, issueDescription) VALUES (?, ?)"
-            );
-            pstmt.setString(1, email);
-            pstmt.setString(2, issue);
-            pstmt.executeUpdate();
-        }
-
-        // Rename 'response' to 'customerResponse' to avoid naming conflict
-        if (request.getParameter("replyIssue") != null) {
-            String email = request.getParameter("email");
-            String customerResponse = request.getParameter("customerResponse");
-            String salesRepSSN = (String) session.getAttribute("ssn");
-            
-            pstmt = conn.prepareStatement(
-                "UPDATE CustomerIssues SET response = ?, salesRepSSN = ? " +
-                "WHERE emailAddress = ? AND response IS NULL"
-            );
-            pstmt.setString(1, customerResponse);
-            pstmt.setString(2, salesRepSSN);
-            pstmt.setString(3, email);
-            pstmt.executeUpdate();
-        }
-    %>
-
-    <!-- Customer Question Submission Form -->
-    <div class="section">
-        <h2>Submit Customer Question</h2>
-        <form method="post">
-            Email: <input type="email" name="email" required>
-            Issue: <textarea name="issue" required></textarea>
-            <input type="submit" name="submitIssue" value="Submit Issue">
-        </form>
-    </div>
-
-    <!-- Reply to Customer Question Form -->
-    <div class="section">
-        <h2>Reply to Customer Question</h2>
-        <form method="post">
-            Customer Email: <input type="email" name="email" required>
-            Response: <textarea name="customerResponse" required></textarea>
-            <input type="submit" name="replyIssue" value="Send Response">
-        </form>
-    </div>
-
-    <!-- Station Search Form -->
-    <div class="section">
-        <h2>Search Train Schedules by Station</h2>
-        <form method="post">
-            Station Name: <input type="text" name="stationSearch">
-            <input type="submit" value="Search Schedules">
-        </form>
-    </div>
-
-    <!-- Transit Line Customer Search Form -->
-    <div class="section">
-        <h2>Search Customers by Transit Line and Date</h2>
-        <form method="post">
-            Transit Line: <input type="text" name="transitLineSearch">
-            Date: <input type="date" name="dateSearch">
-            <input type="submit" value="Search Customers">
-        </form>
-    </div>
-
-    <%
-    } catch (Exception e) {
-        e.printStackTrace();
-    } finally {
-        // Close resources
-        try {
-            if (rs != null) rs.close();
-            if (pstmt != null) pstmt.close();
-            if (conn != null) conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
     %>
 </body>
 </html>
