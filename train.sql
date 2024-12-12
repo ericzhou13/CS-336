@@ -86,21 +86,18 @@ CREATE TABLE IF NOT EXISTS Reservation (
 
 -- CustomerIssues table
 CREATE TABLE IF NOT EXISTS CustomerIssues (
+	reportID INT,
     emailAddress VARCHAR(50),
     issueDescription VARCHAR(1000),
     response VARCHAR(1000),
-    salesRepSSN CHAR(11),
-    PRIMARY KEY (emailAddress , salesRepSSN),
-    FOREIGN KEY (emailAddress)
-        REFERENCES Customer (emailAddress),
-    FOREIGN KEY (salesRepSSN)
-        REFERENCES Employee (SSN)
+    PRIMARY KEY (reportID),
+    FOREIGN KEY (emailAddress) REFERENCES Customer (emailAddress)
 );
 
 INSERT INTO `Customer` VALUES 
 ('hi@gmail.com', 'hey', 'hello', 'cust1', 'pass123'),
 ('bye@gmail.com', 'by', 'bo', 'lol', 'pass321'),
-('lol@gmail.com', 'funny', 'guy', 'haha', 'pass321');
+('sample@gmail.com', 'funny', 'guy', 'haha', 'pass321');
 
 
 INSERT INTO `Employee` VALUES 
@@ -163,7 +160,9 @@ INSERT INTO `Reservation` VALUES
 (11, 'bye@gmail.com', 'Northeast4', 101, 'Trenton', 'Metuchen', '2024-12-10 03:48:00', '2024-12-10 05:48:00', 40.0, 'Tommy', 46.0, '2024-10-10'),
 (12, 'bye@gmail.com', 'Northeast4', 101, 'Trenton', 'Metuchen', '2024-12-10 03:48:00', '2024-12-10 05:48:00', 40.0, 'Tommy', 47.0, '2024-10-10'),
 (13, 'hi@gmail.com', 'NortheastReversed', 202, 'Trenton', 'Metuchen', '2024-12-10 03:48:00', '2024-12-10 05:48:00', 40.0, 'Billy', 40.0, '2024-10-10'),
-(14, 'lol@gmail.com', 'NortheastReversed', 202, 'Trenton', 'Metuchen', '2024-12-10 03:48:00', '2024-12-10 05:48:00', 40.0, 'Tom', 500.0, '2024-9-10');
+(14, 'sample@gmail.com', 'NortheastReversed', 202, 'Trenton', 'Metuchen', '2024-12-10 03:48:00', '2024-12-10 05:48:00', 40.0, 'Tom', 500.0, '2024-9-10');
 
+INSERT INTO `CustomerIssues` VALUES
+(1, 'sample@gmail.com', 'why is the trains slow', 'because they are');
 
 
